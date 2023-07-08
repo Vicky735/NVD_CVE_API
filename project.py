@@ -3,15 +3,9 @@
 import requests
 import os
 import datetime
-# from dotenv import load_dotenv
 import PyPDF2
 import re
 from termcolor import colored
-
-
-# def load_api_key():
-    # load_dotenv()
-    # return os.getenv('NVD_API_KEY')
 
 
 # Wyszukiwanie CVE IDs w plikach pdf (pliki z wynikami skanowania)
@@ -39,12 +33,14 @@ def find_cve_ids_in_pdf(file_path):
     return cve_ids
 
 
+# Formatowanie daty
 def format_date(date_string):
     parsed_date = datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%f")
     formatted_date = parsed_date.strftime("%d-%m-%Y")
     return formatted_date
 
 
+# Pobieranie szczegółów podatności na podstawie identyfikatora CVE
 def get_vulnerability_details(cve_id):
     base_url = 'https://services.nvd.nist.gov/rest/json/cves/2.0'
     url = f'{base_url}?cveId={cve_id}'
@@ -64,6 +60,7 @@ def get_vulnerability_details(cve_id):
         print('Failed to retrieve vulnerability information.')
 
 
+# Wyświetlanie szczegółów podatności
 def print_cve_details(cve_data, impact):
     cvss_v2 = None
     cvss_v30 = None
@@ -99,6 +96,7 @@ def print_cve_details(cve_data, impact):
     print('-' * 100)
 
 
+# Skanowanie kilku podatności na podstawie identyfikatorów CVE
 def scan_vulnerabilities(cve_ids):
     vulnerability_details = []
 
@@ -109,6 +107,7 @@ def scan_vulnerabilities(cve_ids):
     return vulnerability_details
 
 
+# Zapisywanie informacji o podatnościach do pliku txt
 def save_to_file(cve_data):
     file_name = input('Podaj nazwę pliku: ')
     file_path = f'{file_name}.txt'
@@ -138,52 +137,58 @@ def save_to_file(cve_data):
                 file.write('CVSS v3.1 Score: ' + str(cvss_v31['baseScore']) + ' ' + str(cvss_v31['baseSeverity']) + '\n')
 
             file.write('\n')
+            file.write('-' * 100)
+            file.write('n')
 
-    print(f'Informacje o podatnościach zostały zapisane do pliku: {file_path}')
+    print(f'Information about vulnerabilities has been saved to a file: {file_path}')
 
 
+# Funkcja menu
 def menu():
     while True:
         print(colored('\n========== MENU ==========', 'yellow'))
-        print('1. Znajdź identyfikatory CVE w pliku PDF')
-        print('2. Wyświetl informacje o konkretnej podatności')
-        print('3. Zakończ')
+        print('1. Find CVE IDs in PDF file')
+        print('2. View information about a specific vulnerability')
+        print('3. Exit')
 
-        choice = input('Wybierz opcję: ')
+        choice = input('Choose an option: ')
 
+        # Wyszukiwanie identyfikatorów CVE w pliku PDF
         if choice == '1':
             os.system('cls' if os.name == 'nt' else 'clear')  # Czyszczenie ekranu
-            pdf_file_path = input('Podaj ścieżkę do pliku PDF: ')
+            pdf_file_path = input('Enter the path to the PDF file: ')
             try:
                 cve_ids = find_cve_ids_in_pdf(pdf_file_path)
-                print('Znalezione identyfikatory CVE:', ', '.join(cve_ids))
+                print('CVE IDs found:', ', '.join(cve_ids))
 
-                save_choice = input('Czy chcesz wyświetlić informacje o podatnościach (W) czy zapisać do pliku (Z)? ')
+                save_choice = input('Do you want to display information about vulnerabilities (V) or save to a file (S)? ')
 
-                if save_choice.upper() == 'W':
+                if save_choice.upper() == 'V':
                     cve_data = scan_vulnerabilities(cve_ids)
                     for details in cve_data:
                         print_cve_details(*details)
-                elif save_choice.upper() == 'Z':
+                elif save_choice.upper() == 'S':
                     cve_data = scan_vulnerabilities(cve_ids)
                     save_to_file(cve_data)
                 else:
-                    print('Nieprawidłowy wybór.')
+                    print('Invalid choice.')
             except FileNotFoundError:
-                print('Podana ścieżka do pliku jest nieprawidłowa.')
+                print('The specified path to the file is invalid.')
             except OSError as e:
-                print('Wystąpił błąd podczas otwierania pliku:', str(e))
-        
+                print('An error occurred while opening the file: ', str(e))
+
+        # Wyswietlanie informacji o konkretnej podatności
         elif choice == '2':
             os.system('cls' if os.name == 'nt' else 'clear')
-            cve_id = input('Podaj identyfikator CVE: ')
+            cve_id = input('Enter the CVE ID: ')
             cve_data, impact = get_vulnerability_details(cve_id)
             print_cve_details(cve_data, impact)
-        
+
+        # Zakończenie programu
         elif choice == '3':
             break
         else:
-            print('Nieprawidłowy wybór.')
+            print('Invalid choice.')
 
 
 menu()
